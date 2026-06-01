@@ -1,7 +1,15 @@
 node_modules/
 .env
+.env.*
+!.env.example
 dist/
 build/
 *.log
 .DS_Store
 Thumbs.db
+.cache
+.parcel-cache
+.next
+.nuxt
+.vite/
+vite.config.js.timestamp-*
