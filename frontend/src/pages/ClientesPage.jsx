@@ -46,11 +46,12 @@ export function ClientesPage() {
     e.preventDefault();
     setSaving(true);
     try {
+      const payload = { ...form, cpf: form.cpf.replace(/\D/g, '') };
       if (editId) {
-        await api.put(`/clientes/${editId}`, form);
+        await api.put(`/clientes/${editId}`, payload);
         toast.success('Cliente atualizado.');
       } else {
-        await api.post('/clientes', form);
+        await api.post('/clientes', payload);
         toast.success('Cliente criado.');
       }
       setModal(null);

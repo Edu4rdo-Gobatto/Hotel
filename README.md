@@ -70,80 +70,106 @@ O Vite faz proxy de `/api/*` → `http://localhost:3001` automaticamente.
 
 ## Endpoints da API
 
+Legenda da coluna **Banco**:
+- `SP` — Stored Procedure (`CALL sp_xxx()`)
+- `View` — View MySQL (`SELECT * FROM vw_xxx`)
+
+Legenda da coluna **Operação**:
+- `SELECT` — apenas leitura, nenhuma tabela alterada
+- `INSERT` — insere registro
+- `UPDATE` — atualiza registro
+- `DELETE` — remove registro
+
+---
+
 ### Autenticação
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/api/auth/login` | Login → retorna JWT |
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| POST | `/api/auth/login` | SP | `sp_Login` | SELECT | — |
+
+---
 
 ### Clientes (autenticado)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/clientes` | sp_ListarClientes |
-| GET | `/api/clientes?busca=X` | sp_BuscarCliente |
-| GET | `/api/clientes/:id` | sp_ObterCliente |
-| POST | `/api/clientes` | sp_CriarCliente |
-| PUT | `/api/clientes/:id` | sp_AtualizarCliente |
-| DELETE | `/api/clientes/:id` | sp_ExcluirCliente |
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/clientes` | SP | `sp_ListarClientes` | SELECT | — |
+| GET | `/api/clientes?busca=X` | SP | `sp_BuscarCliente` | SELECT | — |
+| GET | `/api/clientes/:id` | SP | `sp_ObterCliente` | SELECT | — |
+| POST | `/api/clientes` | SP | `sp_CriarCliente` | INSERT | `clientes` |
+| PUT | `/api/clientes/:id` | SP | `sp_AtualizarCliente` | UPDATE | `clientes` |
+| DELETE | `/api/clientes/:id` | SP | `sp_ExcluirCliente` | DELETE | `clientes` |
 
-### Quartos (autenticado; write = Gerente)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/quartos` | sp_ListarQuartos |
-| GET | `/api/quartos/disponiveis` | sp_ListarQuartosDisponiveis |
-| GET | `/api/quartos/:num` | sp_ObterQuarto |
-| POST | `/api/quartos` | sp_CriarQuarto |
-| PUT | `/api/quartos/:num` | sp_AtualizarQuarto |
-| PATCH | `/api/quartos/:num/preco` | sp_AtualizarPrecoQuarto → **trigger** |
-| DELETE | `/api/quartos/:num` | sp_ExcluirQuarto |
+---
+
+### Quartos (autenticado; escrita = Gerente)
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/quartos` | **View** | `vw_quartos` | SELECT | — |
+| GET | `/api/quartos/disponiveis` | SP | `sp_ListarQuartosDisponiveis` | SELECT | — |
+| GET | `/api/quartos/:num` | SP | `sp_ObterQuarto` | SELECT | — |
+| POST | `/api/quartos` | SP | `sp_CriarQuarto` | INSERT | `quartos` |
+| PUT | `/api/quartos/:num` | SP | `sp_AtualizarQuarto` | UPDATE | `quartos` |
+| PATCH | `/api/quartos/:num/preco` | SP | `sp_AtualizarPrecoQuarto` | UPDATE | `quartos`, `historico_precos_quartos` (trigger) |
+| DELETE | `/api/quartos/:num` | SP | `sp_ExcluirQuarto` | DELETE | `quartos` |
+
+---
 
 ### Reservas (autenticado)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/reservas` | sp_ListarReservas |
-| GET | `/api/reservas/:id` | sp_ObterReserva |
-| POST | `/api/reservas` | sp_CriarReserva |
-| PUT | `/api/reservas/:id` | sp_AtualizarReserva |
-| DELETE | `/api/reservas/:id` | sp_CancelarReserva |
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/reservas` | SP | `sp_ListarReservas` | SELECT | — |
+| GET | `/api/reservas/:id` | SP | `sp_ObterReserva` | SELECT | — |
+| POST | `/api/reservas` | SP | `sp_CriarReserva` | INSERT | `reservas` |
+| PUT | `/api/reservas/:id` | SP | `sp_AtualizarReserva` | UPDATE | `reservas` |
+| DELETE | `/api/reservas/:id` | SP | `sp_CancelarReserva` | DELETE | `reservas` |
+
+---
 
 ### Hospedagens (autenticado)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/hospedagens` | sp_ListarHospedagens |
-| GET | `/api/hospedagens/ativas` | sp_ListarHospedagensAtivas |
-| GET | `/api/hospedagens/:id` | sp_ObterHospedagem |
-| POST | `/api/hospedagens/checkin` | **sp_RealizarCheckIn** (transação) |
-| POST | `/api/hospedagens/:id/checkout` | **sp_RealizarCheckOut** (transação) |
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/hospedagens` | SP | `sp_ListarHospedagens` | SELECT | — |
+| GET | `/api/hospedagens/ativas` | SP | `sp_ListarHospedagensAtivas` | SELECT | — |
+| GET | `/api/hospedagens/:id` | SP | `sp_ObterHospedagem` | SELECT | — |
+| POST | `/api/hospedagens/checkin` | SP | `sp_RealizarCheckIn` (transação) | INSERT | `hospedagens`, `reservas` |
+| POST | `/api/hospedagens/:id/checkout` | SP | `sp_RealizarCheckOut` (transação) | UPDATE | `hospedagens`, `quartos` |
+
+---
 
 ### Consumos (autenticado)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/consumos/hospedagem/:id` | sp_ListarConsumos |
-| GET | `/api/consumos/produtos` | sp_ListarProdutosServicos |
-| POST | `/api/consumos` | sp_LancarConsumo |
-| DELETE | `/api/consumos/:id` | sp_ExcluirConsumo |
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/consumos/hospedagem/:id` | SP | `sp_ListarConsumos` | SELECT | — |
+| GET | `/api/consumos/produtos` | SP | `sp_ListarProdutosServicos` | SELECT | — |
+| POST | `/api/consumos` | SP | `sp_LancarConsumo` | INSERT | `consumos` |
+| DELETE | `/api/consumos/:id` | SP | `sp_ExcluirConsumo` | DELETE | `consumos` |
 
-### Relatórios (**Gerente apenas**)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/relatorios/ocupacao?mes=&ano=` | sp_RelatorioOcupacao |
-| GET | `/api/relatorios/top-clientes` | sp_RelatorioTopClientes |
-| GET | `/api/relatorios/top-quartos` | sp_RelatorioTopQuartos |
-| GET | `/api/relatorios/faturamento?mes=&ano=` | sp_RelatorioFaturamento |
-| GET | `/api/relatorios/historico-precos/:num` | sp_HistoricoPrecos |
+---
 
-### Funcionários (**Gerente apenas**)
-| Método | Rota | SP chamada |
-|---|---|---|
-| GET | `/api/funcionarios` | sp_ListarFuncionarios |
-| POST | `/api/funcionarios` | sp_CriarFuncionario |
-| PUT | `/api/funcionarios/:id` | sp_AtualizarFuncionario |
-| DELETE | `/api/funcionarios/:id` | sp_ExcluirFuncionario |
+### Relatórios (Gerente apenas)
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/relatorios/ocupacao?mes=&ano=` | SP | `sp_RelatorioOcupacao` | SELECT | — |
+| GET | `/api/relatorios/top-clientes` | SP | `sp_RelatorioTopClientes` | SELECT | — |
+| GET | `/api/relatorios/top-quartos` | SP | `sp_RelatorioTopQuartos` | SELECT | — |
+| GET | `/api/relatorios/faturamento?mes=&ano=` | SP | `sp_RelatorioFaturamento` | SELECT | — |
+| GET | `/api/relatorios/historico-precos/:num` | SP | `sp_HistoricoPrecos` | SELECT | — |
+
+---
+
+### Funcionários (Gerente apenas)
+| Método | Rota | Banco | Objeto | Operação | Tabela(s) afetada(s) |
+|---|---|---|---|---|---|
+| GET | `/api/funcionarios` | **View** | `vw_funcionarios` | SELECT | — |
+| POST | `/api/funcionarios` | SP | `sp_CriarFuncionario` | INSERT | `funcionarios` |
+| PUT | `/api/funcionarios/:id` | SP | `sp_AtualizarFuncionario` | UPDATE | `funcionarios` |
+| DELETE | `/api/funcionarios/:id` | SP | `sp_ExcluirFuncionario` | DELETE | `funcionarios` |
 
 ---
 
 ## Regras de Segurança Implementadas
 
-1. **JWT** em cada requisição (middleware `authMiddleware`)
+1. **JWT** em cada requisição (middleware `verifyToken`)
 2. **`gerenteOnly`** middleware protege rotas de relatórios e funcionários
 3. **sp_RealizarCheckOut** — a SP retorna o valor total mascarado/nulo para Recepcionistas; o frontend exibe o ícone de cadeado
 4. **Senhas** armazenadas com hash SHA2 no MySQL (via sp_CriarFuncionario)

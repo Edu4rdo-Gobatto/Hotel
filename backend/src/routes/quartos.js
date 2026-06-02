@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { callProc } from '../db/pool.js';
+import { callProc, queryView } from '../db/pool.js';
 import { verifyToken, gerenteOnly } from '../middleware/auth.js';
 
 const router = Router();
@@ -8,8 +8,8 @@ router.use(verifyToken);
 // GET /api/quartos
 router.get('/', async (req, res) => {
   try {
-    const results = await callProc('sp_ListarQuartos', []);
-    res.json(results[0] || []);
+    const rows = await queryView('vw_quartos');
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -40,8 +40,8 @@ router.get('/:numero', async (req, res) => {
 // POST /api/quartos
 router.post('/', gerenteOnly, async (req, res) => {
   try {
-    const { numero, andar, capacidade, status, id_categoria, preco_diaria } = req.body;
-    await callProc('sp_CriarQuarto', [numero, andar, capacidade, status || 'Disponivel', id_categoria, preco_diaria]);
+    const { numero, andar, capacidade, id_categoria, preco_diaria } = req.body;
+    await callProc('sp_CriarQuarto', [numero, andar, capacidade, preco_diaria, id_categoria]);
     res.status(201).json({ message: 'Quarto criado com sucesso.' });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { callProc } from '../db/pool.js';
+import { callProc, queryView } from '../db/pool.js';
 import { verifyToken, gerenteOnly } from '../middleware/auth.js';
 
 const router = Router();
@@ -8,8 +8,8 @@ router.use(verifyToken, gerenteOnly);
 // GET /api/funcionarios
 router.get('/', async (req, res) => {
   try {
-    const results = await callProc('sp_ListarFuncionarios', []);
-    res.json(results[0] || []);
+    const rows = await queryView('vw_funcionarios');
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
